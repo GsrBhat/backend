@@ -43,8 +43,38 @@ public class DatabaseConfig {
             return props;
         }
 
+        // DB_URL override, e.g. Render may provide jdbc:dpg-xxxx/your_db
+        String dbUrl = env.getProperty("DB_URL");
+        if (dbUrl != null && !dbUrl.isBlank()) {
+            String normalizedUrl = normalizeJdbcUrl(dbUrl);
+            props.setUrl(normalizedUrl);
+            props.setUsername(env.getProperty("DB_USERNAME", "postgres"));
+            props.setPassword(env.getProperty("DB_PASSWORD", "postgres"));
+            props.setDriverClassName("org.postgresql.Driver");
+            return props;
+        }
+
         // Fallback to properties/config defaults in application.properties
         return props;
+    }
+
+    private String normalizeJdbcUrl(String rawUrl) {
+        if (rawUrl.startsWith("jdbc:postgresql://")) {
+            return rawUrl;
+        }
+        if (rawUrl.startsWith("postgres://")) {
+            // Convert DATABASE_URL-like URL to JDBC URL
+            return rawUrl.replaceFirst("^postgres://", "jdbc:postgresql://");
+        }
+        if (rawUrl.startsWith("jdbc:dpg-")) {
+            // Render may send JDBC URL in shorthand form; convert to postgres URL
+            return rawUrl.replaceFirst("^jdbc:dpg-", "jdbc:postgresql://dpg-");
+        }
+        if (rawUrl.startsWith("jdbc:")) {
+            // Generic fallback: ensure jdbc:postgresql prefix if missing
+            return rawUrl.replaceFirst("^jdbc:[^:]+:", "jdbc:postgresql://");
+        }
+        return rawUrl;
     }
 
     @Bean
