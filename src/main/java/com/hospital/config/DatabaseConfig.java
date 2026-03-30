@@ -62,6 +62,10 @@ public class DatabaseConfig {
         if (rawUrl.startsWith("jdbc:postgresql://")) {
             return rawUrl;
         }
+        if (rawUrl.startsWith("postgresql://")) {
+            // Convert postgresql:// to JDBC URL
+            return rawUrl.replaceFirst("^postgresql://", "jdbc:postgresql://");
+        }
         if (rawUrl.startsWith("postgres://")) {
             // Convert DATABASE_URL-like URL to JDBC URL
             return rawUrl.replaceFirst("^postgres://", "jdbc:postgresql://");
