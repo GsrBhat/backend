@@ -79,6 +79,11 @@ public class DatabaseConfig {
 
     @Bean
     public DataSource dataSource(DataSourceProperties dataSourceProperties) {
+        String url = dataSourceProperties.getUrl();
+        if (url != null && !url.isBlank()) {
+            dataSourceProperties.setUrl(normalizeJdbcUrl(url));
+        }
         return dataSourceProperties.initializeDataSourceBuilder().build();
     }
 }
+
