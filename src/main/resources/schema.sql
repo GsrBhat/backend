@@ -5,18 +5,18 @@ DROP TABLE IF EXISTS users;
 
 -- Users Table
 CREATE TABLE users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
     role VARCHAR(50) NOT NULL,
     specialization VARCHAR(255),
-    rating DOUBLE DEFAULT 0.0
+    rating DOUBLE PRECISION DEFAULT 0.0
 );
 
 -- Appointments Table
 CREATE TABLE appointments (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     doctor_id INT NOT NULL,
     patient_id INT NOT NULL,
     token_number INT NOT NULL,
@@ -26,7 +26,7 @@ CREATE TABLE appointments (
 
 -- Reviews Table
 CREATE TABLE reviews (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     doctor_id INT NOT NULL,
     patient_id INT NOT NULL,
     rating INT NOT NULL,
