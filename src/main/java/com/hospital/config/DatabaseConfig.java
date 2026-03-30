@@ -43,13 +43,27 @@ public class DatabaseConfig {
             return props;
         }
 
-        // DB_URL override, e.g. Render may provide jdbc:dpg-xxxx/your_db
+        // DB_URL override, e.g. Render may provide jdbc:dpg-xxxx/your_db or jdbc:postgresql://user:pass@host/db
         String dbUrl = env.getProperty("DB_URL");
         if (dbUrl != null && !dbUrl.isBlank()) {
             String normalizedUrl = normalizeJdbcUrl(dbUrl);
+            String username = env.getProperty("DB_USERNAME", env.getProperty("SPRING_DATASOURCE_USERNAME", "postgres"));
+            String password = env.getProperty("DB_PASSWORD", env.getProperty("SPRING_DATASOURCE_PASSWORD", "postgres"));
+
+            // If URL contains embedded user info, extract and remove it from URL.
+            if (normalizedUrl.startsWith("jdbc:postgresql://")) {
+                String urlWithoutAuth = stripUserInfoFromUrl(normalizedUrl);
+                String[] userInfo = extractUserInfo(normalizedUrl);
+                if (userInfo != null && userInfo.length == 2) {
+                    username = userInfo[0];
+                    password = userInfo[1];
+                }
+                normalizedUrl = urlWithoutAuth;
+            }
+
             props.setUrl(normalizedUrl);
-            props.setUsername(env.getProperty("DB_USERNAME", "postgres"));
-            props.setPassword(env.getProperty("DB_PASSWORD", "postgres"));
+            props.setUsername(username);
+            props.setPassword(password);
             props.setDriverClassName("org.postgresql.Driver");
             return props;
         }
@@ -79,6 +93,36 @@ public class DatabaseConfig {
             return rawUrl.replaceFirst("^jdbc:[^:]+:", "jdbc:postgresql://");
         }
         return rawUrl;
+    }
+
+    private String stripUserInfoFromUrl(String jdbcUrl) {
+        if (!jdbcUrl.startsWith("jdbc:postgresql://")) {
+            return jdbcUrl;
+        }
+        String noPrefix = jdbcUrl.substring("jdbc:postgresql://".length());
+        int at = noPrefix.indexOf('@');
+        if (at < 0) {
+            return jdbcUrl;
+        }
+        String hostAndPath = noPrefix.substring(at + 1);
+        return "jdbc:postgresql://" + hostAndPath;
+    }
+
+    private String[] extractUserInfo(String jdbcUrl) {
+        if (!jdbcUrl.startsWith("jdbc:postgresql://")) {
+            return null;
+        }
+        String noPrefix = jdbcUrl.substring("jdbc:postgresql://".length());
+        int at = noPrefix.indexOf('@');
+        if (at < 0) {
+            return null;
+        }
+        String userInfo = noPrefix.substring(0, at);
+        int colon = userInfo.indexOf(':');
+        if (colon < 0) {
+            return new String[] {userInfo, ""};
+        }
+        return new String[] {userInfo.substring(0, colon), userInfo.substring(colon + 1)};
     }
 
     @Bean
