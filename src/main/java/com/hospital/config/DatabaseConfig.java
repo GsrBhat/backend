@@ -68,6 +68,25 @@ public class DatabaseConfig {
             return props;
         }
 
+        // Fallback from Spring standard properties when DB_URL is not set
+        String springUrl = env.getProperty("SPRING_DATASOURCE_URL", env.getProperty("spring.datasource.url"));
+        if (springUrl != null && !springUrl.isBlank()) {
+            String normalizedUrl = normalizeJdbcUrl(springUrl);
+            if (normalizedUrl.startsWith("jdbc:postgresql://")) {
+                String urlWithoutAuth = stripUserInfoFromUrl(normalizedUrl);
+                String[] userInfo = extractUserInfo(normalizedUrl);
+                if (userInfo != null && userInfo.length == 2) {
+                    props.setUsername(userInfo[0]);
+                    props.setPassword(userInfo[1]);
+                }
+                props.setUrl(urlWithoutAuth);
+            } else {
+                props.setUrl(normalizedUrl);
+            }
+            props.setDriverClassName("org.postgresql.Driver");
+            return props;
+        }
+
         // Fallback to properties/config defaults in application.properties
         return props;
     }
