@@ -148,7 +148,13 @@ public class DatabaseConfig {
     public DataSource dataSource(DataSourceProperties dataSourceProperties) {
         String url = dataSourceProperties.getUrl();
         if (url != null && !url.isBlank()) {
-            dataSourceProperties.setUrl(normalizeJdbcUrl(url));
+            String normalizedUrl = normalizeJdbcUrl(url);
+            String[] userInfo = extractUserInfo(normalizedUrl);
+            if (userInfo != null && userInfo.length == 2) {
+                dataSourceProperties.setUsername(userInfo[0]);
+                dataSourceProperties.setPassword(userInfo[1]);
+            }
+            dataSourceProperties.setUrl(stripUserInfoFromUrl(normalizedUrl));
         }
         return dataSourceProperties.initializeDataSourceBuilder().build();
     }
